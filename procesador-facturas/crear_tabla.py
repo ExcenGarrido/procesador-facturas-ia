@@ -30,3 +30,4 @@ try:
 
 except psycopg2.OperationalError as error:
     print(f"No se pudo conectar a PostgreSQL: {error}")
+

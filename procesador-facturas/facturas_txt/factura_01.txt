@@ -1,0 +1,6 @@
+PROVEEDOR: Ferretería Industrial El Tornillo S.A.
+CUIT: 30-71122334-5
+FACTURA NRO: A-0003-00012345
+FECHA DE EMISIÓN: 2026-10-10
+DETALLE: Lote de mechas y discos de corte.
+TOTAL A PAGAR: $142500.00
