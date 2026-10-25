@@ -1,63 +1,57 @@
-# Roadmap Python + IA
+# 🧾 API & Pipeline de Procesamiento Inteligente de Facturas (IA + FastAPI)
 
-Repositorio de formación como desarrollador Python orientado a automatización con IA.
-Incluye ejercicios de práctica y el desarrollo incremental de un procesador de facturas
-con inteligencia artificial.
+Sistema automatizado de extremo a extremo (End-to-End) para la extracción, validación, persistencia y exposición de datos contables a partir de facturas en formato PDF y texto, utilizando Modelos de Lenguaje Grande (LLMs) y una arquitectura de API REST en la nube.
 
-## Estructura
+🌐 **Demo en vivo (Swagger UI en Azure):** [procesador-facturas.azurewebsites.net/docs](https://procesador-facturas-a8aag2exdzgghgb9.brazilsouth-01.azurewebsites.net/docs)
 
-- `fase-0-ejercicios/`: ejercicios de calentamiento (fundamentos de Python).
-- `procesador-facturas/`: proyecto real que se construye fase por fase.
+---
 
-## Fase 0 - Ejercicios
+## 🚀 Arquitectura y Características Principales
 
-En `fase-0-ejercicios/`:
+- **Extracción Inteligente con IA (Groq API):** Procesamiento de documentos no estructurados (PDF y TXT) mediante LLMs para estructurar datos clave (proveedor, fecha, ítems, impuestos y totales) en formato JSON validado.
+- **API RESTful con FastAPI:** Endpoints documentados bajo el estándar OpenAPI (Swagger) para consultar facturas procesadas, filtrar registros e integrar el servicio con sistemas externos.
+- **Persistencia en Base de Datos SQL:** Modelado e inserción transaccional en PostgreSQL (`SQLAlchemy` + `psycopg2`), garantizando integridad de datos y control de duplicados.
+- **Procesamiento por Lotes y Reportes:** Scripts automatizados para ingesta masiva de directorios (`pypdf`) y generación/lectura de reportes en Excel (`pandas`, `openpyxl`).
+- **Orquestación y Automatización:** Flujo de trabajo integrable con **n8n** (`flujo_n8n_facturas.json`) para automatización de procesos operativos.
+- **Cloud & CI/CD:** Desplegado en **Microsoft Azure App Service (Linux)** con integración continua mediante **GitHub Actions**.
 
-- `list_comprehensions.py`: ejercicios resueltos de list comprehensions.
-- `metodos_clase.py`: clase `Producto` con métodos de instancia, clase y estático.
-- `manejo_errores.py`: función `obtener_total` con manejo de `ValueError` y `KeyError`.
+---
 
-## Procesador de Facturas
+## 🛠️ Stack Tecnológico
 
-En `procesador-facturas/`:
+- **Lenguaje:** Python 3.13
+- **Framework Web:** FastAPI, Uvicorn, Gunicorn
+- **Inteligencia Artificial:** Groq SDK (LLMs)
+- **Base de Datos & ORM:** PostgreSQL, SQLAlchemy, Psycopg2
+- **Procesamiento de Archivos y Datos:** Pandas, OpenPyXL, PyPDF, FPDF2, Pydantic
+- **Infraestructura & DevOps:** Azure App Service, GitHub Actions, Variables de Entorno (`python-dotenv`)
 
-- `crear_excel.py`: genera un Excel de prueba con facturas.
-- `leer_excel.py`: lee el Excel y procesa cada fila, manejando errores por fila sin detener el programa.
+---
 
-## Cómo ejecutar
+## 📂 Estructura del Proyecto
 
-Desde la raíz del repo, con el entorno virtual activado:
+- `api_facturas.py`: Punto de entrada de la API REST (FastAPI), configuración de SQLAlchemy y definición de endpoints.
+- `extraer_factura.py`: Módulo de conexión con la API de Groq para extracción estructurada de datos desde texto/PDF.
+- `procesar_lote_pdf.py` / `procesar_lote_txt.py`: Motores de procesamiento masivo por lotes con manejo de excepciones por archivo.
+- `conectar_db.py` / `crear_tabla.py` / `insertar_factura.py` / `verificar_tabla.py`: Capa de acceso a datos y gestión de tablas en PostgreSQL.
+- `crear_excel.py` / `leer_excel.py`: Módulos de integración y exportación hacia planillas de cálculo.
+- `flujo_n8n_facturas.json`: Plantilla exportable para automatización del flujo en n8n.
 
-```bash
-# Fase 0 - ejercicios
-python fase-0-ejercicios/list_comprehensions.py
-python fase-0-ejercicios/metodos_clase.py
-python fase-0-ejercicios/manejo_errores.py
+---
 
-# Procesador de facturas
-cd procesador-facturas
-python crear_excel.py
-python leer_excel.py
-```
+## ⚙️ Instalación y Ejecución Local
 
-## Instalación
+Clonar el repositorio:git clone https://github.com/ExcenGarrido/procesador-facturas-ia.gitcd procesador-facturas-ia
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate       # Windows
-pip install -r requirements.txt
-```
+Instalar dependencias:pip install -r requirements.txt
 
-## Aprendizajes
+Configurar variables de entorno: Crear un archivo .env con las credenciales de PostgreSQL (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT) y GROQ_API_KEY.
 
-1. Estructura de list comprehensions: `[expresión for elemento in iterable if condición]`.
-2. La expresión es la parte más fácil de equivocar porque no da error pero el resultado es incorrecto.
-3. `self` es la instancia específica; `cls` es la clase misma.
-4. Los métodos de clase respetan la herencia usando `cls` en lugar de hardcodear el nombre.
-5. Los métodos estáticos son funciones utilitarias que no dependen de la clase ni de la instancia.
-6. Cada tipo de error necesita su propio `except` (`ValueError`, `KeyError`, `FileNotFoundError`).
-7. `try/except` dentro de un bucle permite que un dato malo no rompa el procesamiento de los demás.
+Iniciar el servidor de la API:uvicorn api_facturas:app --reload
 
-## Autor
+👤 Autor
+Pablo Agustin Garrido
 
-Excen Garrido
+Técnico Universitario en Programación (UTN) 
+
+GitHub: https://github.com/ExcenGarrido
