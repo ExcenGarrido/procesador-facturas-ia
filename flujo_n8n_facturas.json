@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "url": "http://host.docker.internal:8000/facturas",
+        "url": "https://procesador-facturas-a8aag2exdzgghgb9.brazilsouth-01.azurewebsites.net/facturas",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",

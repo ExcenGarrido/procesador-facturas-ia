@@ -39,6 +39,16 @@ Sistema automatizado de extremo a extremo (End-to-End) para la extracción, vali
 
 ---
 
+## 🔄 Capa de Automatización (n8n)
+
+El proyecto incluye flujos de trabajo automatizados en **n8n** para consumir y procesar los datos expuestos por la API en la nube:
+
+* **Consumo de Endpoints (`HTTP Request`)**: Se conecta de forma segura a la API desplegada en Azure para obtener el listado actualizado de facturas.
+* **Procesamiento de Lotes (`Split Out`)**: Desglosa las respuestas JSON estructuradas en elementos individuales para su análisis unitario.
+* **Evaluación de Negocio (`If`)**: Aplica reglas condicionales automáticas sobre los montos de las facturas (por ejemplo, filtrando transacciones que superen un determinado umbral).
+
+El archivo JSON del flujo se encuentra disponible en el repositorio para su importación y ejecución directa.
+
 ## ⚙️ Instalación y Ejecución Local
 
 Clonar el repositorio:git clone https://github.com/ExcenGarrido/procesador-facturas-ia.gitcd procesador-facturas-ia
