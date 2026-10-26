@@ -20,7 +20,7 @@ try:
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS facturas (
             id SERIAL PRIMARY KEY,
-            proveedor VARCHAR(200) NOT NULL,
+            proveedor VARCHAR(255) NOT NULL,
             cuit VARCHAR(20),
             numero VARCHAR(50),
             fecha DATE,

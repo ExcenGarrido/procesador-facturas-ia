@@ -34,13 +34,14 @@ conexion = None
 cursor = None
 
 try:
-    # 5. Abrimos la conexión al contenedor Docker de PostgreSQL
+    # 5. Abrimos la conexión a PostgreSQL en la nube (Neon)
     conexion = psycopg2.connect(
         host=os.getenv("DB_HOST"),
         port=os.getenv("DB_PORT"),
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD")
+        password=os.getenv("DB_PASSWORD"),
+        sslmode="require"  # Requerido por Neon.tech para conexiones seguras
     )
     cursor = conexion.cursor()
 
@@ -56,13 +57,13 @@ try:
     print(f"✅ Factura guardada con éxito en PostgreSQL. ID asignado: {id_generado}")
 
 except psycopg2.Error as e:
-    # 9. Si algo falla (ej. tabla inexistente o tipo de dato inválido), deshacemos cambios
+    # 9. Si algo falla, deshacemos cambios
     if conexion:
         conexion.rollback()
     print(f"❌ Error de base de datos al insertar la factura: {e}")
 
 finally:
-    # 10. Cerramos cursor y conexión siempre para no agotar la memoria del servidor
+    # 10. Cerramos cursor y conexión siempre para no agotar la memoria
     if cursor:
         cursor.close()
     if conexion:

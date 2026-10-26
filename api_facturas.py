@@ -16,7 +16,7 @@ URL_DB = (
     f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
     f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 )
-engine = create_engine(URL_DB)
+engine = create_engine(URL_DB, connect_args={"sslmode": "require"})
 
 SessionLocal = sessionmaker(bind=engine)
 
@@ -34,25 +34,26 @@ class Factura(Base):
     total = Column(Numeric(12, 2), nullable=False)
 
 
-
 @app.get("/")
 def inicio():
     return {
         "estado": "online",
         "sistema": "Procesador de Facturas",
-        "mensaje": " servidor FastAPI está escuchando peticiones.",
+        "mensaje": "El servidor FastAPI está escuchando peticiones.",
     }
+
 
 @app.get("/facturas")
 def listar_facturas():
     sesion = SessionLocal()
     try:
         facturas = sesion.query(Factura).order_by(Factura.id.asc()).all()
-        sesion.close()
         return {"cantidad": len(facturas), "facturas": facturas}
     except SQLAlchemyError as e:
-        sesion.close()
         raise HTTPException(status_code=500, detail=f"Error en la base de datos: {e}")
+    finally:
+        sesion.close()  # El finally asegura que siempre se cierre la sesión
+
 
 @app.get("/facturas/{factura_id}")
 def obtener_factura(factura_id: int):
@@ -62,7 +63,6 @@ def obtener_factura(factura_id: int):
     sesion = SessionLocal()
     try:
         factura = sesion.query(Factura).filter(Factura.id == factura_id).first()
-        sesion.close()
 
         if factura is None:
             raise HTTPException(
@@ -72,7 +72,8 @@ def obtener_factura(factura_id: int):
         return factura
 
     except SQLAlchemyError as e:
-        sesion.close()
         raise HTTPException(
             status_code=500, detail=f"Error en la base de datos: {e}"
         )
+    finally:
+        sesion.close()

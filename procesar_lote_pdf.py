@@ -18,12 +18,14 @@ VALUES (%s, %s, %s, %s, %s)
 RETURNING id;
 """
 
+# Añadimos sslmode="require" para garantizar compatibilidad con Neon en la nube
 conexion = psycopg2.connect(
     host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT"),
+    port=os.getenv("DB_PORT", 5432),
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD")
+    password=os.getenv("DB_PASSWORD"),
+    sslmode="require"
 )
 cursor = conexion.cursor()
 
@@ -50,64 +52,61 @@ else:
             texto_factura = "\n".join(paginas_texto).strip()
 
             if not texto_factura:
-                            raise ValueError(
-                                "No se pudo extraer texto (PDF en blanco o escaneado)."
-                            )
+                        raise ValueError(
+                            "No se pudo extraer texto (PDF en blanco o escaneado)."
+                        )
             
             primera_linea = texto_factura.splitlines()[0]
             print(
                     f"   ✅ Extraído ({len(lector.pages)} pág. / {len(texto_factura)} caract.) -> '{primera_linea}'\n"
                  )
-
             
             prompt = f"""
-                            Extraé los datos de esta factura y devolvelos como JSON con esta estructura exacta:
+                        Extraé los datos de esta factura y devolvelos como JSON con esta estructura exacta:
             
-                            {{
-                            "proveedor": "nombre del proveedor",
-                            "cuit": "CUIT",
-                            "numero": "número de factura",
-                            "fecha": "fecha en formato YYYY-MM-DD",
-                            "total": 0.0
-                            }}
+                        {{
+                        "proveedor": "nombre del proveedor",
+                        "cuit": "CUIT",
+                        "numero": "número de factura",
+                        "fecha": "fecha en formato YYYY-MM-DD",
+                        "total": 0.0
+                        }}
             
-                            Si no encontrás algún campo, poné null.
+                        Si no encontrás algún campo, poné null.
             
-                            Factura:
-                            {texto_factura}
+                        Factura:
+                        {texto_factura}
             
-                            Devolvé SOLO el JSON, sin texto adicional.
-                        """
+                        Devolvé SOLO el JSON, sin texto adicional.
+                    """
             
             respuesta = client.chat.completions.create(
-                            model="openai/gpt-oss-120b",
-                                    messages=[
-                                            {"role": "system", "content": "Sos un asistente que extrae datos de facturas y responde solo en JSON."},
-                                             {"role": "user", "content": prompt}
-                                          ]
-                        ) 
-
+                        model="openai/gpt-oss-120b",
+                            messages=[
+                                    {"role": "system", "content": "Sos un asistente que extrae datos de facturas y responde solo en JSON."},
+                                     {"role": "user", "content": prompt}
+                                  ]
+                      ) 
             
             texto_respuesta = respuesta.choices[0].message.content
             datos_factura = json.loads(texto_respuesta)
 
             valores = (
-                            datos_factura["proveedor"],
-                            datos_factura["cuit"],
-                            datos_factura["numero"],
-                            datos_factura["fecha"],
-                            datos_factura["total"]
-                         )
+                        datos_factura["proveedor"],
+                        datos_factura["cuit"],
+                        datos_factura["numero"],
+                        datos_factura["fecha"],
+                        datos_factura["total"]
+                       )
             
             cursor.execute(sql_insert, valores)  
             id_generado = cursor.fetchone()[0]
             conexion.commit()
             print(f"   ✅ Guardada en PostgreSQL con ID: {id_generado}\n")
             
-            
         except (OSError, PdfStreamError, ValueError, json.JSONDecodeError, psycopg2.Error) as e:
-                        print(f"   ❌ Saltando '{ruta_pdf.name}': {e}\n")
-                        conexion.rollback()
+                print(f"   ❌ Saltando '{ruta_pdf.name}': {e}\n")
+                conexion.rollback()
 
 cursor.close()
 conexion.close()
