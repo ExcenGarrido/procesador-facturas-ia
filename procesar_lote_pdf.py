@@ -18,18 +18,6 @@ VALUES (%s, %s, %s, %s, %s)
 RETURNING id;
 """
 
-# Añadimos sslmode="require" para garantizar compatibilidad con Neon en la nube
-conexion = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT", 5432),
-    dbname=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    sslmode="require"
-)
-cursor = conexion.cursor()
-
-
 carpeta_pdfs = Path(__file__).parent / "facturas_pdf"
 archivos_pdf = sorted(carpeta_pdfs.glob("*.pdf"))
 
@@ -39,27 +27,25 @@ else:
     print(f"📂 Se encontraron {len(archivos_pdf)} archivos. Procesando lote...\n")
 
     for ruta_pdf in archivos_pdf:
+        conexion = None
+        cursor = None
         try:
             print(f"📄 Leyendo PDF: {ruta_pdf.name}...")
             lector = PdfReader(ruta_pdf)
 
             paginas_texto = []
             for pagina in lector.pages:
-               texto_pagina = pagina.extract_text()
-               if texto_pagina:
+                texto_pagina = pagina.extract_text()
+                if texto_pagina:
                     paginas_texto.append(texto_pagina)
 
             texto_factura = "\n".join(paginas_texto).strip()
 
             if not texto_factura:
-                        raise ValueError(
-                            "No se pudo extraer texto (PDF en blanco o escaneado)."
-                        )
+                raise ValueError("No se pudo extraer texto (PDF en blanco o escaneado).")
             
             primera_linea = texto_factura.splitlines()[0]
-            print(
-                    f"   ✅ Extraído ({len(lector.pages)} pág. / {len(texto_factura)} caract.) -> '{primera_linea}'\n"
-                 )
+            print(f"    ✅ Extraído ({len(lector.pages)} pág. / {len(texto_factura)} caract.) -> '{primera_linea}'\n")
             
             prompt = f"""
                         Extraé los datos de esta factura y devolvelos como JSON con esta estructura exacta:
@@ -85,7 +71,7 @@ else:
                             messages=[
                                     {"role": "system", "content": "Sos un asistente que extrae datos de facturas y responde solo en JSON."},
                                      {"role": "user", "content": prompt}
-                                  ]
+                                ]
                       ) 
             
             texto_respuesta = respuesta.choices[0].message.content
@@ -99,14 +85,38 @@ else:
                         datos_factura["total"]
                        )
             
+            # Abrimos la conexión justo antes de insertar para evitar desconexiones SSL en Neon
+            conexion = psycopg2.connect(
+                host=os.getenv("DB_HOST"),
+                port=os.getenv("DB_PORT", 5432),
+                dbname=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                sslmode="require"
+            )
+            cursor = conexion.cursor()
+
             cursor.execute(sql_insert, valores)  
             id_generado = cursor.fetchone()[0]
             conexion.commit()
-            print(f"   ✅ Guardada en PostgreSQL con ID: {id_generado}\n")
+            print(f"    ✅ Guardada en PostgreSQL con ID: {id_generado}\n")
             
         except (OSError, PdfStreamError, ValueError, json.JSONDecodeError, psycopg2.Error) as e:
-                print(f"   ❌ Saltando '{ruta_pdf.name}': {e}\n")
-                conexion.rollback()
-
-cursor.close()
-conexion.close()
+            print(f"    ❌ Saltando '{ruta_pdf.name}': {e}\n")
+            if conexion:
+                try:
+                    conexion.rollback()
+                except Exception:
+                    pass
+        finally:
+            # Cerramos los recursos de esta iteración de forma segura
+            if cursor:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+            if conexion:
+                try:
+                    conexion.close()
+                except Exception:
+                    pass
